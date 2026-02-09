@@ -26,8 +26,7 @@ echo "Step 2: Building macOS app with PyInstaller..."
 # PyInstaller command for macOS
 python -m PyInstaller \
     --name="PubMedPapersFeed" \
-    --onefile \
-    --windowed \
+    --onedir \
     --add-data="web/templates:web/templates" \
     --add-data="web/static:web/static" \
     --add-data="data:data" \

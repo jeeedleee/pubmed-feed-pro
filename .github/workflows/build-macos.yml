@@ -24,16 +24,26 @@ jobs:
         pip install pyinstaller
         pip install -r requirements.txt
     
+    - name: Check directory structure
+      run: |
+        pwd
+        ls -la
+        ls -la web/
+    
     - name: Build macOS app (Intel)
       run: |
         chmod +x build_macos.sh
         TARGET_ARCH=x86_64 ./build_macos.sh
     
+    - name: Copy additional files to dist
+      run: |
+        cp "macOS使用说明.txt" dist/ 2>/dev/null || true
+        ls -la dist/
+    
     - name: Create ZIP archive
       run: |
         cd dist
-        zip -r ../PubMedPapersFeed-macOS-x86_64.zip PubMedPapersFeed start.command README.md config.yaml.example macOS使用说明.txt 2>/dev/null || \
-        zip -r ../PubMedPapersFeed-macOS-x86_64.zip PubMedPapersFeed start.command README.md config.yaml.example
+        zip -r ../PubMedPapersFeed-macOS-x86_64.zip PubMedPapersFeed start.command README.md config.yaml.example "macOS使用说明.txt"
         cd ..
         ls -la *.zip
     
@@ -67,16 +77,26 @@ jobs:
         pip install pyinstaller
         pip install -r requirements.txt
     
+    - name: Check directory structure
+      run: |
+        pwd
+        ls -la
+        ls -la web/
+    
     - name: Build macOS app (Apple Silicon)
       run: |
         chmod +x build_macos.sh
         TARGET_ARCH=arm64 ./build_macos.sh
     
+    - name: Copy additional files to dist
+      run: |
+        cp "macOS使用说明.txt" dist/ 2>/dev/null || true
+        ls -la dist/
+    
     - name: Create ZIP archive
       run: |
         cd dist
-        zip -r ../PubMedPapersFeed-macOS-arm64.zip PubMedPapersFeed start.command README.md config.yaml.example macOS使用说明.txt 2>/dev/null || \
-        zip -r ../PubMedPapersFeed-macOS-arm64.zip PubMedPapersFeed start.command README.md config.yaml.example
+        zip -r ../PubMedPapersFeed-macOS-arm64.zip PubMedPapersFeed start.command README.md config.yaml.example "macOS使用说明.txt"
         cd ..
         ls -la *.zip
     
