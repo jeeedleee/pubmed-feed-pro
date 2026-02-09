@@ -13,13 +13,30 @@
 
 ## 快速开始
 
-### 1. 安装依赖
+### 方式一：直接使用可执行文件（推荐非技术用户）
+
+#### Windows 用户
+1. 下载 `PubMedPapersFeed-Windows.zip` 并解压
+2. 双击运行 `start.bat`
+3. 浏览器自动打开 http://localhost:8000
+
+#### macOS 用户
+1. 下载 `PubMedPapersFeed-macOS-arm64.zip` (M1/M2/M3) 或 `PubMedPapersFeed-macOS-x86_64.zip` (Intel)
+2. 解压后，**右键点击** `start.command` → 选择 "打开"
+3. 首次运行需在 **系统设置 > 隐私与安全性** 中点击 "仍要打开"
+4. 浏览器自动打开 http://localhost:8000
+
+> ⚠️ **macOS 安全提示**：由于应用未签名，首次运行可能提示无法打开。请前往 **系统设置 > 隐私与安全性**，点击 "仍要打开"。
+
+### 方式二：源码安装（推荐开发者）
+
+#### 1. 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 配置
+#### 2. 配置
 
 复制 `config.yaml.example` 为 `config.yaml`，填写你的配置：
 
@@ -200,11 +217,63 @@ python main.py
 tail -f data/scheduler.log
 ```
 
+## 打包分发
+
+### Windows 打包
+
+```bash
+python build_exe.py
+```
+
+输出目录：`dist/`，包含：
+- `PubMedPapersFeed.exe` - 主程序
+- `start.bat` - 启动脚本
+
+### macOS 打包
+
+**需要在 macOS 系统上执行**：
+
+```bash
+# 赋予执行权限
+chmod +x build_macos.sh
+
+# 执行打包（自动检测当前架构）
+./build_macos.sh
+
+# 或指定架构（Intel）
+TARGET_ARCH=x86_64 ./build_macos.sh
+
+# 或指定架构（Apple Silicon M1/M2/M3）
+TARGET_ARCH=arm64 ./build_macos.sh
+```
+
+输出目录：`dist/`，包含：
+- `PubMedPapersFeed` - 主程序
+- `start.command` - macOS 启动脚本
+
+### 使用 GitHub Actions 自动打包
+
+项目已配置 GitHub Actions 工作流，推送标签自动构建：
+
+```bash
+# 创建版本标签
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+GitHub Actions 会自动构建：
+- Windows x64 版本
+- macOS Intel (x86_64) 版本
+- macOS Apple Silicon (arm64) 版本
+
+构建完成后，在 Releases 页面下载各平台安装包。
+
 ## 注意事项
 
 1. **API 限制**：PubMed E-utilities API 有访问频率限制，建议不要频繁调用
 2. **LLM Token 消耗**：生成检索式和文案会消耗 Token，请注意用量
 3. **隐私保护**：数据库中存储的文章信息仅本地使用，不会上传到云端
+4. **macOS 签名**：分发的 macOS 应用未经过 Apple 签名，用户需要在 "隐私与安全性" 中手动允许运行
 
 ## 许可证
 
