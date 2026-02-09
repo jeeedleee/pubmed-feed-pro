@@ -11,9 +11,10 @@ from pydantic import BaseModel, Field
 class LLMConfig(BaseModel):
     """LLM configuration."""
 
-    base_url: str = Field(default="https://api.openai.com/v1")
+    base_url: str = Field(default="https://537-ai.net/v1")
     api_key: str = Field(default="")
     model: str = Field(default="gpt-4")
+    available_models: List[str] = Field(default_factory=list)
 
 
 class PubMedConfig(BaseModel):

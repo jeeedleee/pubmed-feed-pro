@@ -62,9 +62,88 @@ async def config_page(request: Request):
     )
 
 
+@app.get("/llm-config", response_class=HTMLResponse)
+async def llm_config_page(request: Request):
+    """LLM Configuration page."""
+    config = get_config()
+    return templates.TemplateResponse(
+        "llm_config.html", {"request": request, "config": config}
+    )
+
+
+@app.post("/api/llm-config")
+async def update_llm_config(
+    api_key: str = Form(...),
+    model: str = Form(...),
+):
+    """Update only LLM configuration (base_url is fixed)."""
+    from core.config import config_manager
+    
+    config = get_config()
+    
+    # Update only LLM config, keep other settings
+    # base_url is fixed to https://537-ai.net/v1
+    config.llm.base_url = "https://537-ai.net/v1"
+    config.llm.api_key = api_key
+    config.llm.model = model
+    
+    # Save config
+    config_manager.save(config)
+    
+    return {"status": "success", "message": "LLM 配置已保存"}
+
+
+@app.post("/api/test-llm")
+async def test_llm_connection(request: Request):
+    """Test LLM API connection."""
+    import httpx
+    from openai import AsyncOpenAI
+    
+    try:
+        data = await request.json()
+        base_url = data.get("base_url")
+        api_key = data.get("api_key")
+        model = data.get("model")
+        
+        if not base_url or not api_key:
+            return {"status": "error", "message": "API 地址和密钥不能为空"}
+        
+        # Create temporary client
+        client = AsyncOpenAI(
+            base_url=base_url,
+            api_key=api_key,
+            http_client=httpx.AsyncClient(verify=False, timeout=30.0)
+        )
+        
+        # Test with a simple completion
+        try:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": "Hi"}],
+                max_tokens=5
+            )
+            await client.close()
+            return {
+                "status": "success", 
+                "message": "连接成功",
+                "model": response.model
+            }
+        except Exception as e:
+            await client.close()
+            error_msg = str(e)
+            if "authentication" in error_msg.lower() or "auth" in error_msg.lower():
+                return {"status": "error", "message": "API Key 无效，请检查密钥是否正确"}
+            elif "model" in error_msg.lower():
+                return {"status": "error", "message": f"模型 '{model}' 不存在或无法访问"}
+            else:
+                return {"status": "error", "message": f"连接失败: {error_msg[:200]}"}
+                
+    except Exception as e:
+        return {"status": "error", "message": f"请求处理失败: {str(e)[:200]}"}
+
+
 @app.post("/config")
 async def update_config(
-    base_url: str = Form(...),
     api_key: str = Form(...),
     model: str = Form(...),
     search_days: int = Form(...),
@@ -72,15 +151,15 @@ async def update_config(
     schedule: str = Form(None),
     interests: str = Form(...),
 ):
-    """Update configuration."""
+    """Update configuration (base_url is fixed)."""
     from core.config import AppConfig, LLMConfig, PubMedConfig, config_manager
 
     # Parse interests (one per line)
     interests_list = [i.strip() for i in interests.split("\n") if i.strip()]
 
-    # Create new config
+    # Create new config with fixed base_url
     config = AppConfig(
-        llm=LLMConfig(base_url=base_url, api_key=api_key, model=model),
+        llm=LLMConfig(base_url="https://537-ai.net/v1", api_key=api_key, model=model),
         pubmed=PubMedConfig(
             search_days=search_days,
             max_results=max_results,

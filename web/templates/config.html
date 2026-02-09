@@ -49,7 +49,8 @@
                     <li class="nav-item"><a class="nav-link" href="/search">搜索</a></li>
                     <li class="nav-item"><a class="nav-link" href="/search-history">搜索历史</a></li>
                     <li class="nav-item"><a class="nav-link" href="/reports">报告</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="/config">配置</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/config">完整配置</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/llm-config">LLM 配置</a></li>
                 </ul>
             </div>
         </div>
@@ -67,12 +68,9 @@
                         <form id="configForm">
                             <h5 class="mb-3">LLM 配置</h5>
                             <div class="mb-3">
-                                <label class="form-label">API 基础地址</label>
-                                <input type="text" class="form-control" name="base_url" value="{{ config.llm.base_url }}" required>
-                            </div>
-                            <div class="mb-3">
                                 <label class="form-label">API 密钥</label>
                                 <input type="password" class="form-control" name="api_key" value="{{ config.llm.api_key }}" required>
+                                <small class="text-muted">API 服务端点已固定配置</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">模型名称</label>

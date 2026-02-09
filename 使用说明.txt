@@ -1,0 +1,67 @@
+===============================================
+  PubMed Papers Feed - 使用说明
+===============================================
+
+【系统要求】
+- Windows 10/11
+- Python 3.9 或更高版本
+- 网络连接
+
+【安装步骤】
+
+1. 安装 Python
+   - 访问 https://www.python.org/downloads/
+   - 下载 Python 3.9+ 并安装
+   - 安装时勾选 "Add Python to PATH"
+
+2. 配置 API Key
+   - 打开 config.yaml 文件（用记事本）
+   - 将 api_key 后的 "" 替换为你的 API Key：
+     
+     api_key: "sk-your-api-key-here"
+     model: "gpt-4"
+   
+   - 保存文件
+
+3. 启动程序
+   - 双击"启动程序.bat"
+   - 首次运行会自动安装依赖
+   - 浏览器会自动打开 http://localhost:8000
+
+【使用流程】
+
+1. 配置 LLM
+   - 访问 http://localhost:8000/llm-config
+   - 填写 API Key 和模型名称
+   - 点击保存（会自动测试连接）
+
+2. 搜索文献
+   - 点击"搜索"菜单
+   - 输入中文描述，如"深度学习在癌症诊断中的应用"
+   - 系统自动生成 PubMed 检索式并搜索
+
+3. 生成文案
+   - 选择感兴趣的文献
+   - 点击"生成报告"
+   - 自动生成小红书/公众号文案
+
+4. 查看报告
+   - 在"报告"页面查看历史记录
+   - 支持下载 Markdown 格式
+
+【常见问题】
+
+Q: 提示 "未检测到 Python"
+A: 请安装 Python 并确保添加到 PATH
+
+Q: 提示 "API Key 无效"
+A: 检查 config.yaml 中的 api_key 是否正确填写
+
+Q: 无法访问网页
+A: 确保程序已启动，浏览器访问 http://localhost:8000
+
+【获取帮助】
+- GitHub: https://github.com/yourusername/pubmed_papers_feed
+- 邮箱: your.email@example.com
+
+===============================================
