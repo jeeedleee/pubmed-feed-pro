@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报告 - PubMed Papers Feed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #0066cc;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .navbar {
+            background-color: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .navbar-brand {
+            color: var(--primary-color) !important;
+            font-weight: 600;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .report-card {
+            transition: all 0.2s;
+        }
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .file-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-journal-medical me-2"></i>
+                PubMed Papers Feed
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">仪表盘</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/search">搜索</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/search-history">搜索历史</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/reports">报告</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/config">配置</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="h3 mb-0">历史报告</h1>
+                <p class="text-muted mb-0">查看和下载已生成的报告</p>
+            </div>
+            <div class="col-auto">
+                <a href="/search" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-2"></i>生成新报告
+                </a>
+            </div>
+        </div>
+
+        {% if reports %}
+        <div class="row g-4">
+            {% for report in reports %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card report-card h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-1">{{ report.date }}</h5>
+                                <p class="text-muted mb-0 small">
+                                    <i class="bi bi-file-earmark-text me-1"></i>
+                                    {{ report.article_count }} 篇文献
+                                </p>
+                            </div>
+                            <span class="badge bg-primary">{{ report.id }}</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {% for name, path in report.file_paths.items() %}
+                            <span class="file-badge">{{ name }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="/report/{{ report.id }}" class="btn btn-sm btn-outline-primary flex-fill">
+                                <i class="bi bi-eye me-1"></i>查看
+                            </a>
+                            <a href="/download/{{ report.id }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted mb-3"></i>
+                <h5>暂无报告</h5>
+                <p class="text-muted">点击"生成新报告"开始创建</p>
+                <a href="/search" class="btn btn-primary">
+                    <i class="bi bi-search me-2"></i>开始搜索
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

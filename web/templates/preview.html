@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>预览 - PubMed Papers Feed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #0066cc;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .navbar {
+            background-color: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .navbar-brand {
+            color: var(--primary-color) !important;
+            font-weight: 600;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .content-preview {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .nav-pills .nav-link {
+            border-radius: 8px;
+            margin-right: 0.5rem;
+        }
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+        .article-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #e9ecef;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 1.5rem;
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+        .loading-subtext {
+            margin-top: 0.5rem;
+            color: #adb5bd;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在生成文案...</div>
+        <div class="loading-subtext">LLM 正在为您创作多平台内容</div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-journal-medical me-2"></i>
+                PubMed Papers Feed
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">仪表盘</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/search">搜索</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/search-history">搜索历史</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/reports">报告</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/config">配置</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="h3 mb-0">文案预览</h1>
+                <p class="text-muted mb-0">查看单篇文章的多平台文案</p>
+            </div>
+            <div class="col-auto">
+                <a href="/search" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>返回搜索
+                </a>
+            </div>
+        </div>
+
+        <div class="article-info">
+            <h5 class="mb-2">{{ article.title }}</h5>
+            <p class="mb-1">
+                <i class="bi bi-journal-text me-2"></i>{{ article.journal }}
+            </p>
+            <p class="mb-1">
+                <i class="bi bi-calendar me-2"></i>{{ article.pub_date }}
+            </p>
+            <p class="mb-0">
+                <i class="bi bi-link-45deg me-2"></i>
+                <a href="{{ article.url }}" target="_blank" class="text-white">{{ article.url }}</a>
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <ul class="nav nav-pills" id="contentTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="xiaohongshu-long-tab" data-bs-toggle="pill" data-bs-target="#xiaohongshu-long" type="button">
+                            <i class="bi bi-phone me-1"></i>小红书长文
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="xiaohongshu-short-tab" data-bs-toggle="pill" data-bs-target="#xiaohongshu-short" type="button">
+                            <i class="bi bi-phone me-1"></i>小红书短文
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="wechat-long-tab" data-bs-toggle="pill" data-bs-target="#wechat-long" type="button">
+                            <i class="bi bi-chat-square-text me-1"></i>公众号长文
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="wechat-short-tab" data-bs-toggle="pill" data-bs-target="#wechat-short" type="button">
+                            <i class="bi bi-chat-square-text me-1"></i>公众号短文
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <div class="tab-content" id="contentTabContent">
+                    <div class="tab-pane fade show active" id="xiaohongshu-long">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">小红书长文案</h5>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyContent('xiaohongshu-long-content')">
+                                <i class="bi bi-clipboard me-1"></i>复制
+                            </button>
+                        </div>
+                        <div class="content-preview" id="xiaohongshu-long-content">{{ content.xiaohongshu_long }}</div>
+                    </div>
+                    <div class="tab-pane fade" id="xiaohongshu-short">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">小红书短文案</h5>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyContent('xiaohongshu-short-content')">
+                                <i class="bi bi-clipboard me-1"></i>复制
+                            </button>
+                        </div>
+                        <div class="content-preview" id="xiaohongshu-short-content">{{ content.xiaohongshu_short }}</div>
+                    </div>
+                    <div class="tab-pane fade" id="wechat-long">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">公众号长文案</h5>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyContent('wechat-long-content')">
+                                <i class="bi bi-clipboard me-1"></i>复制
+                            </button>
+                        </div>
+                        <div class="content-preview" id="wechat-long-content">{{ content.wechat_long }}</div>
+                    </div>
+                    <div class="tab-pane fade" id="wechat-short">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">公众号短文案</h5>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyContent('wechat-short-content')">
+                                <i class="bi bi-clipboard me-1"></i>复制
+                            </button>
+                        </div>
+                        <div class="content-preview" id="wechat-short-content">{{ content.wechat_short }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Hide loading overlay when page is fully loaded
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 300); // Small delay for smooth transition
+        });
+
+        function copyContent(elementId) {
+            const content = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('已复制到剪贴板');
+            });
+        }
+    </script>
+</body>
+</html>

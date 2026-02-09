@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索 - PubMed Papers Feed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #0066cc;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .navbar {
+            background-color: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .navbar-brand {
+            color: var(--primary-color) !important;
+            font-weight: 600;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .article-card {
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: white;
+            border-radius: 0 8px 8px 0;
+        }
+        .article-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .article-meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .score-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-journal-medical me-2"></i>
+                PubMed Papers Feed
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">仪表盘</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/search">搜索</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/search-history">搜索历史</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/reports">报告</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/config">配置</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="h3 mb-0">文献搜索</h1>
+                <p class="text-muted mb-0">基于 LLM 智能检索 PubMed 最新文献</p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                <form id="searchForm">
+                    <ul class="nav nav-tabs mb-3" id="searchTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="natural-tab" data-bs-toggle="tab" data-bs-target="#natural-pane" type="button" role="tab">
+                                <i class="bi bi-magic me-1"></i>自然语言描述
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-pane" type="button" role="tab">
+                                <i class="bi bi-code-square me-1"></i>手动检索式
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="searchTabContent">
+                        <!-- 自然语言描述 -->
+                        <div class="tab-pane fade show active" id="natural-pane" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label">描述您感兴趣的文献主题</label>
+                                <textarea class="form-control" name="natural_language" id="naturalInput" rows="3" placeholder="例如: 深度学习在癌症筛查中的应用"></textarea>
+                                <small class="text-muted">LLM 会自动将其转换为 PubMed 检索式</small>
+                            </div>
+                        </div>
+                        
+                        <!-- 手动检索式 -->
+                        <div class="tab-pane fade" id="manual-pane" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label">输入 PubMed 检索式</label>
+                                <input type="text" class="form-control" name="custom_query" placeholder="例如: (LLM OR GPT) AND (cancer OR tumor)">
+                                <small class="text-muted">使用 PubMed 标准检索语法</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-2"></i>开始搜索
+                    </button>
+                </form>
+
+                <div class="loading mt-4 text-center" id="loadingIndicator">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted" id="loadingText">正在搜索文献...</p>
+                </div>
+
+                <!-- Full screen loading for preview -->
+                <div id="previewLoading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 class="text-primary">正在生成文案...</h5>
+                    <p class="text-muted">LLM 正在为您创作内容，请稍候</p>
+                </div>
+
+                <div id="searchResults" style="display: none;">
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">搜索结果</h5>
+                        <span class="text-muted" id="resultStats"></span>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>检索式:</strong> <code id="queryDisplay"></code>
+                    </div>
+                    <div id="articlesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 根据选择的标签页更新加载提示
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', (e) => {
+                const loadingText = document.getElementById('loadingText');
+                if (e.target.id === 'natural-tab') {
+                    loadingText.textContent = 'LLM 正在生成检索式并搜索文献...';
+                } else {
+                    loadingText.textContent = '正在搜索文献...';
+                }
+            });
+        });
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            // 根据当前激活的标签页，清理不需要的参数
+            const activeTab = document.querySelector('.tab-pane.active');
+            if (activeTab.id === 'natural-pane') {
+                // 自然语言模式：只保留 natural_language
+                formData.delete('custom_query');
+            } else if (activeTab.id === 'manual-pane') {
+                // 手动模式：只保留 custom_query
+                formData.delete('natural_language');
+            }
+            
+            document.getElementById('loadingIndicator').classList.add('active');
+            document.getElementById('searchResults').style.display = 'none';
+            
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('loadingIndicator').classList.remove('active');
+                
+                if (result.status === 'success') {
+                    document.getElementById('searchResults').style.display = 'block';
+                    document.getElementById('queryDisplay').textContent = result.query;
+                    document.getElementById('resultStats').textContent = 
+                        `找到 ${result.total_found} 篇，新文献 ${result.new_articles} 篇`;
+                    
+                    const articlesList = document.getElementById('articlesList');
+                    articlesList.innerHTML = '';
+                    
+                    if (result.articles.length === 0) {
+                        articlesList.innerHTML = '<div class="alert alert-info">未找到相关文献</div>';
+                    } else {
+                        result.articles.forEach((article, index) => {
+                            const card = document.createElement('div');
+                            card.className = 'article-card';
+                            card.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="article-title">${article.title}</div>
+                                        <div class="article-meta">
+                                            <i class="bi bi-journal-text me-1"></i>${article.journal}
+                                            <span class="mx-2">|</span>
+                                            <i class="bi bi-calendar me-1"></i>${article.pub_date}
+                                            <span class="mx-2">|</span>
+                                            <span class="score-badge">评分: ${article.score.toFixed(1)}</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <a href="${article.url}" target="_blank" class="btn btn-sm btn-outline-secondary me-2">
+                                                <i class="bi bi-box-arrow-up-right me-1"></i>查看原文
+                                            </a>
+                                            <a href="/preview/${article.pmid}" class="btn btn-sm btn-outline-primary preview-btn">
+                                                <i class="bi bi-eye me-1"></i>预览文案
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            articlesList.appendChild(card);
+                        });
+                    }
+                } else {
+                    alert('搜索失败: ' + (result.detail || '未知错误'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loadingIndicator').classList.remove('active');
+                alert('搜索出错，请检查网络连接');
+            }
+        });
+
+        // Handle preview button clicks - show loading overlay
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.preview-btn')) {
+                e.preventDefault();
+                const link = e.target.closest('.preview-btn');
+                document.getElementById('previewLoading').style.display = 'flex';
+                // Navigate after a short delay to show the loading screen
+                setTimeout(() => {
+                    window.location.href = link.href;
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

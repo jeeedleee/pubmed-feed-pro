@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索历史 - PubMed Papers Feed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #0066cc;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .navbar {
+            background-color: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .navbar-brand {
+            color: var(--primary-color) !important;
+            font-weight: 600;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .history-item {
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: white;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.2s;
+        }
+        .history-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .history-query {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #495057;
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        .history-meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .stat-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .stat-badge.new {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6c757d;
+        }
+        .btn-ghost {
+            color: #dc3545;
+            background: transparent;
+            border: none;
+            padding: 0.25rem 0.5rem;
+        }
+        .btn-ghost:hover {
+            background: #f8d7da;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-journal-medical me-2"></i>
+                PubMed Papers Feed
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">仪表盘</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/search">搜索</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/search-history">搜索历史</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/reports">报告</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/config">配置</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-0">搜索历史</h1>
+                        <p class="text-muted mb-0">共 {{ history|length }} 条检索记录</p>
+                    </div>
+                    <a href="/search" class="btn btn-primary">
+                        <i class="bi bi-search me-2"></i>新搜索
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-4">
+                {% if history %}
+                    {% for item in history %}
+                    <div class="history-item" id="history-{{ item.id }}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                {% if item.natural_language %}
+                                <div class="mb-2">
+                                    <span class="badge bg-info text-dark">
+                                        <i class="bi bi-magic me-1"></i>自然语言
+                                    </span>
+                                    <span class="ms-2 text-dark">{{ item.natural_language }}</span>
+                                </div>
+                                {% endif %}
+                                <div class="history-query">{{ item.query }}</div>
+                            </div>
+                            <button class="btn btn-ghost ms-2" onclick="deleteHistory({{ item.id }})" title="删除">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        <div class="history-meta d-flex align-items-center">
+                            <span class="me-3">
+                                <i class="bi bi-clock me-1"></i>
+                                {{ item.created_at[:19].replace('T', ' ') if item.created_at else 'Unknown' }}
+                            </span>
+                            <span class="stat-badge me-2">
+                                <i class="bi bi-files me-1"></i>
+                                找到 {{ item.total_found }} 篇
+                            </span>
+                            {% if item.new_articles > 0 %}
+                            <span class="stat-badge new">
+                                <i class="bi bi-star-fill me-1"></i>
+                                {{ item.new_articles }} 篇新文献
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-clock-history display-4 mb-3"></i>
+                        <h5>暂无搜索记录</h5>
+                        <p>您进行的每一次搜索都会被记录在这里</p>
+                        <a href="/search" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>开始第一次搜索
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function deleteHistory(id) {
+            if (!confirm('确定要删除这条搜索记录吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/search-history/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    // 移除 DOM 元素
+                    const element = document.getElementById(`history-${id}`);
+                    if (element) {
+                        element.remove();
+                    }
+                    
+                    // 检查是否还有记录
+                    const remaining = document.querySelectorAll('.history-item');
+                    if (remaining.length === 0) {
+                        location.reload(); // 刷新显示空状态
+                    }
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('删除出错');
+            }
+        }
+    </script>
+</body>
+</html>
